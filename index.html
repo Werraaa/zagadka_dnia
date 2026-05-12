@@ -24,7 +24,7 @@
             align-items: center;
             padding: 20px;
             min-height: 100vh;
-            user-select: none; /* Zapobiega zaznaczaniu tekstu podczas rysowania */
+            user-select: none;
         }
 
         h1 { color: var(--accent); background: rgba(255,255,255,0.05); padding: 10px 30px; border-radius: 15px; }
@@ -37,28 +37,18 @@
         .tile.wrong { background: #cf6679; animation: shake 0.4s; }
         .group { padding: 15px; margin: 5px 0; border-radius: 10px; color: white; font-weight: bold; width: 100%; max-width: 500px; text-align: center; }
 
-        /* SEKCJA 2: OBRAZEK LOGICZNY - POPRAWIONE WYRÓWNANIE */
+        /* SEKCJA 2: OBRAZEK LOGICZNY */
         .nonogram-layout { 
             display: inline-grid; 
-            grid-template-columns: 100px auto; /* Stała szerokość legendy bocznej */
+            grid-template-columns: 100px auto; 
             background: white; 
             padding: 15px; 
             border-radius: 8px; 
             color: #000;
         }
 
-        .hints-top { 
-            display: grid; 
-            grid-template-columns: repeat(20, var(--cell-size)); /* Dokładnie ta sama szerokość co komórki */
-            grid-column: 2; 
-        }
-
-        .hints-left { 
-            display: grid; 
-            grid-template-rows: repeat(5, var(--cell-size)); 
-            grid-row: 2; 
-        }
-
+        .hints-top { display: grid; grid-template-columns: repeat(20, var(--cell-size)); grid-column: 2; }
+        .hints-left { display: grid; grid-template-rows: repeat(5, var(--cell-size)); grid-row: 2; }
         .grid-nonogram { 
             display: grid; 
             grid-template-columns: repeat(20, var(--cell-size)); 
@@ -78,13 +68,11 @@
             background: #fff;
         }
 
-        /* Pędzel X */
         .cell.marked-x::after {
             content: "×"; color: red; position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%); font-size: 20px; font-weight: bold;
         }
 
-        /* Kolory komórek */
         .c-c { background-color: #000000 !important; } .c-r { background-color: #ff0000 !important; }
         .c-n { background-color: #0000ff !important; } .c-z { background-color: #008000 !important; }
         .c-b { background-color: #8d4925 !important; } .c-p { background-color: #ffa500 !important; }
@@ -94,8 +82,13 @@
         .h-l { flex-direction: row; justify-content: flex-end; align-items: center; border-top: 1px solid #eee; padding-right: 8px; gap: 4px; }
 
         /* SEKCJA 3: REBUS */
-        #rebus-section img { display: block; margin: 20px auto; border: 2px solid var(--accent); }
+        #rebus-container { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        #rebus-img { display: block; border: 2px solid var(--accent); margin-bottom: 15px; }
         input[type="text"] { padding: 12px; width: 280px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; font-size: 16px; margin-bottom: 10px; }
+
+        /* FINAŁ */
+        #final-image-container { width: 90vw; max-width: 1000px; margin-top: 20px; text-align: center; }
+        #goralki-jpg { width: 100%; border-radius: 15px; box-shadow: 0 0 30px var(--accent); }
 
         button { background: #4caf50; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; margin: 10px; }
         .btn-brush { width: 45px; height: 45px; border-radius: 8px; border: 2px solid transparent; }
@@ -118,12 +111,12 @@
 
     <div id="section-nonogram" class="hidden">
         <div id="brush-panel" style="margin-bottom: 15px; display: flex; gap: 5px; justify-content: center;">
-            <button class="btn-brush active" id="btn-c" onclick="setBrush('c')" style="background:#000" title="Czarny"></button>
-            <button class="btn-brush" id="btn-r" onclick="setBrush('r')" style="background:#f00" title="Czerwony"></button>
-            <button class="btn-brush" id="btn-n" onclick="setBrush('n')" style="background:#00f" title="Niebieski"></button>
-            <button class="btn-brush" id="btn-z" onclick="setBrush('z')" style="background:#008000" title="Zielony"></button>
-            <button class="btn-brush" id="btn-b" onclick="setBrush('b')" style="background:#8d4925" title="Brązowy"></button>
-            <button class="btn-brush" id="btn-p" onclick="setBrush('p')" style="background:#ffa500" title="Pomarańczowy"></button>
+            <button class="btn-brush active" id="btn-c" onclick="setBrush('c')" style="background:#000"></button>
+            <button class="btn-brush" id="btn-r" onclick="setBrush('r')" style="background:#f00"></button>
+            <button class="btn-brush" id="btn-n" onclick="setBrush('n')" style="background:#00f"></button>
+            <button class="btn-brush" id="btn-z" onclick="setBrush('z')" style="background:#008000"></button>
+            <button class="btn-brush" id="btn-b" onclick="setBrush('b')" style="background:#8d4925"></button>
+            <button class="btn-brush" id="btn-p" onclick="setBrush('p')" style="background:#ffa500"></button>
             <button class="btn-brush" id="btn-x" onclick="setBrush('x')" style="background:#eee; color: red; font-size: 24px; font-weight: bold; padding: 0;">×</button>
             <button class="btn-brush" id="btn-0" onclick="setBrush('0')" style="background:#fff; border: 1px dashed #000; color: #000; font-size: 10px;">GUMKA</button>
         </div>
@@ -135,24 +128,28 @@
         </div>
         <br>
         <button onclick="checkNonogram()">Zatwierdź obrazek</button>
+
+        <div id="rebus-section" class="hidden">
+            <div id="rebus-container">
+                <img src="rebus.png" id="rebus-img" alt="Rebus">
+                <input type="text" id="rebus-input" placeholder="Wpisz hasło...">
+                <button onclick="checkRebus()">Sprawdź Hasło</button>
+            </div>
+        </div>
     </div>
 
-    <div id="rebus-section" class="hidden">
-        <img src="rebus.png" id="rebus-img" alt="Rebus">
-        <div style="text-align: center;">
-            <p>Odpowiedź do rebusu:</p>
-            <input type="text" id="rebus-input" placeholder="Wpisz hasło...">
-            <br>
-            <button onclick="checkRebus()">Sprawdź Hasło</button>
+    <div id="final-section" class="hidden">
+        <div id="final-image-container">
+            <h2 style="color: var(--accent);">🎉 GRATULACJE!</h2>
+            <img src="goralki.jpg" id="goralki-jpg" alt="Nagroda">
         </div>
-        <h2 id="final-win" class="hidden" style="color: #4caf50; font-size: 2em; text-shadow: 0 0 10px rgba(0,0,0,0.5);">🎉 GRATULACJE! KOMPLET ROZWIĄZANY!</h2>
     </div>
 
 <script>
     let isMouseDown = false;
     let currentBrush = 'c';
 
-    // --- DANE POŁĄCZEŃ ---
+    // --- POŁĄCZENIA ---
     const connCats = [
         { name: "Schodki", words: ["Schody","Kamień","Piwo","Rzut"], color: "#845ef7" },
         { name: "Debilard", words: ["Debil","Diament","Kij","Gra"], color: "#f59f00" },
@@ -200,7 +197,7 @@
         }
     }
 
-    // --- NONOGRAM LOGIKA ---
+    // --- NONOGRAM ---
     const nonoSol = [
         "000000000000n00000zz",
         "000c0000000000bb00zz",
@@ -276,17 +273,18 @@
             const r = cell.dataset.r, c = cell.dataset.c;
             const sol = nonoSol[r][c];
             if(sol === '0') {
-                if(cell.classList.contains("marked-x")) return; // X jest uznawane za puste
+                if(cell.classList.contains("marked-x")) return;
                 if(cell.classList.length > 1) ok = false;
             } else if(!cell.classList.contains("c-" + sol)) ok = false;
         });
 
         if(ok) {
             document.getElementById("rebus-section").classList.remove("hidden");
-            const nonoWidth = document.querySelector(".nonogram-layout").offsetWidth;
-            document.getElementById("rebus-img").style.width = nonoWidth + "px";
+            // Ustawienie szerokości dokładnie takiej jak siatka (cell-size * 20 kolumn)
+            const gridWidth = 20 * 30; 
+            document.getElementById("rebus-img").style.width = gridWidth + "px";
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        } else alert("Obrazek zawiera błędy! Spróbuj ponownie.");
+        } else alert("Obrazek zawiera błędy!");
     }
 
     function showNonogram() {
@@ -296,13 +294,15 @@
         initNonogram();
     }
 
+    // --- REBUS I FINAŁ ---
     function checkRebus() {
         const val = document.getElementById("rebus-input").value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if(val === "goralki") {
-            document.getElementById("final-win").classList.remove("hidden");
-            document.getElementById("rebus-input").disabled = true;
-            alert("Genialnie! To już koniec na dziś.");
-        } else alert("Niepoprawne hasło. Spróbuj jeszcze raz!");
+            // Ukrywamy wszystko poza nagłówkiem i pokazujemy finał
+            document.getElementById("section-nonogram").classList.add("hidden");
+            document.getElementById("final-section").classList.remove("hidden");
+            window.scrollTo(0,0);
+        } else alert("Niepoprawne hasło!");
     }
 
     initConn();
