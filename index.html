@@ -8,11 +8,10 @@
         :root {
             --bg-page: #121212;
             --bg-panel: #1e1e1e;
-            --cell-size: 35px;
-            --black: #000000;
-            --brown: #8d4925;
             --accent: #bb86fc;
             --text-main: #e1e1e1;
+            --tile-bg: #2c2c2c;
+            --cell-size: 30px;
         }
 
         body {
@@ -20,184 +19,293 @@
             background-color: var(--bg-page);
             color: var(--text-main);
             margin: 0;
-            height: 100vh;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        /* Widoki */
-        #game-view, #catcher-view {
-            display: none;
-            width: 100%;
-            height: 100vh;
-            position: relative;
-        }
-
-        #game-view { display: flex; }
-
-        /* Sidebar & Zagadka */
-        .sidebar {
-            width: 100px;
-            background: var(--bg-panel);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px 0;
-            border-right: 1px solid #333;
-            z-index: 10;
+            padding: 20px;
+            min-height: 100vh;
+            user-select: none; /* Zapobiega zaznaczaniu tekstu podczas rysowania */
         }
 
-        .brush {
-            width: 70px; height: 70px; margin-bottom: 15px; border-radius: 12px;
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: bold; background: #2c2c2c; border: 2px solid transparent;
+        h1 { color: var(--accent); background: rgba(255,255,255,0.05); padding: 10px 30px; border-radius: 15px; }
+        .hidden { display: none !important; }
+
+        /* SEKCJA 1: POŁĄCZENIA */
+        .grid-conn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: 20px 0; }
+        .tile { aspect-ratio: 1/1; background: var(--tile-bg); border: 2px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; font-weight: bold; text-align: center; padding: 5px; text-transform: uppercase; }
+        .tile.selected { background: var(--accent); color: #000; }
+        .tile.wrong { background: #cf6679; animation: shake 0.4s; }
+        .group { padding: 15px; margin: 5px 0; border-radius: 10px; color: white; font-weight: bold; width: 100%; max-width: 500px; text-align: center; }
+
+        /* SEKCJA 2: OBRAZEK LOGICZNY - POPRAWIONE WYRÓWNANIE */
+        .nonogram-layout { 
+            display: inline-grid; 
+            grid-template-columns: 100px auto; /* Stała szerokość legendy bocznej */
+            background: white; 
+            padding: 15px; 
+            border-radius: 8px; 
+            color: #000;
         }
 
-        .brush.active { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
-        .color-box { width: 25px; height: 25px; border-radius: 4px; margin-bottom: 4px; }
-        .brush-1 .color-box { background: var(--black); }
-        .brush-2 .color-box { background: var(--brown); }
-        .brush-x .color-box { background: #fff; color: red; font-size: 20px; text-align: center; line-height: 25px; }
+        .hints-top { 
+            display: grid; 
+            grid-template-columns: repeat(20, var(--cell-size)); /* Dokładnie ta sama szerokość co komórki */
+            grid-column: 2; 
+        }
 
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .hints-left { 
+            display: grid; 
+            grid-template-rows: repeat(5, var(--cell-size)); 
+            grid-row: 2; 
+        }
 
-        h1 { font-weight: 700; color: var(--accent); background: rgba(255, 255, 255, 0.05); padding: 10px 30px; border-radius: 15px; margin-bottom: 20px; }
+        .grid-nonogram { 
+            display: grid; 
+            grid-template-columns: repeat(20, var(--cell-size)); 
+            grid-template-rows: repeat(5, var(--cell-size)); 
+            border: 2px solid #000; 
+            grid-column: 2;
+            grid-row: 2;
+        }
 
-        .game-layout { display: inline-grid; grid-template-columns: auto auto; grid-template-rows: auto auto; background: white; padding: 15px; border-radius: 8px; }
-        #topHints { grid-column: 2; display: flex; }
-        #leftHints { grid-row: 2; display: flex; flex-direction: column; }
-        .hint-cell { display: flex; background: #fff; }
-        .top-group { width: var(--cell-size); height: 100px; flex-direction: column; justify-content: flex-end; align-items: center; border-left: 1px solid #ddd; }
-        .left-group { height: var(--cell-size); width: 100px; justify-content: flex-end; align-items: center; padding-right: 10px; border-top: 1px solid #ddd; }
-        .hint-num { font-size: 14px; font-weight: 900; margin: 1px; }
+        .cell { 
+            width: var(--cell-size); 
+            height: var(--cell-size); 
+            border: 1px solid #ccc; 
+            cursor: crosshair; 
+            box-sizing: border-box; 
+            position: relative;
+            background: #fff;
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(9, var(--cell-size)); grid-template-rows: repeat(10, var(--cell-size)); border: 2px solid #000; }
-        .cell { width: var(--cell-size); height: var(--cell-size); border: 1px solid #ccc; background: white; box-sizing: border-box; }
-        .cell.filled-1 { background-color: var(--black) !important; }
-        .cell.filled-2 { background-color: var(--brown) !important; }
-        .cell.marked-x::after { content: "×"; color: red; display: block; text-align: center; font-size: 24px; font-weight: bold; }
+        /* Pędzel X */
+        .cell.marked-x::after {
+            content: "×"; color: red; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); font-size: 20px; font-weight: bold;
+        }
 
-        /* Animacja Oscylacji */
-        @keyframes osc-up { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-35px); } }
-        @keyframes osc-down { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(35px); } }
-        .animate-up { animation: osc-up 1s infinite ease-in-out; }
-        .animate-down { animation: osc-down 1s infinite ease-in-out; }
+        /* Kolory komórek */
+        .c-c { background-color: #000000 !important; } .c-r { background-color: #ff0000 !important; }
+        .c-n { background-color: #0000ff !important; } .c-z { background-color: #008000 !important; }
+        .c-b { background-color: #8d4925 !important; } .c-p { background-color: #ffa500 !important; }
+        
+        .hint-group { display: flex; background: #fff; font-size: 11px; font-weight: 900; box-sizing: border-box; }
+        .h-t { flex-direction: column; justify-content: flex-end; align-items: center; border-left: 1px solid #eee; padding-bottom: 5px; }
+        .h-l { flex-direction: row; justify-content: flex-end; align-items: center; border-top: 1px solid #eee; padding-right: 8px; gap: 4px; }
 
-        /* GRA CATCHER */
-        #catcher-view { background: #0f0f0f; display: none; flex-direction: column; align-items: center; }
-        #score-board { font-size: 40px; margin-top: 20px; color: var(--accent); font-weight: bold; }
-        #game-canvas { background: #1a1a1a; border: 4px solid #333; margin-top: 20px; cursor: none; }
+        /* SEKCJA 3: REBUS */
+        #rebus-section img { display: block; margin: 20px auto; border: 2px solid var(--accent); }
+        input[type="text"] { padding: 12px; width: 280px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; font-size: 16px; margin-bottom: 10px; }
+
+        button { background: #4caf50; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; margin: 10px; }
+        .btn-brush { width: 45px; height: 45px; border-radius: 8px; border: 2px solid transparent; }
+        .btn-brush.active { border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
-<body onmousedown="isDrawing = true" onmouseup="isDrawing = false">
+<body onmousedown="isMouseDown = true" onmouseup="isMouseDown = false">
 
-    <div id="game-view">
-        <div class="sidebar">
-            <div class="brush brush-1 active" onclick="setBrush('1')" id="b-1"><div class="color-box"></div>CZERŃ</div>
-            <div class="brush brush-2" onclick="setBrush('2')" id="b-2"><div class="color-box"></div>BRĄZ</div>
-            <div class="brush brush-x" onclick="setBrush('x')" id="b-x"><div class="color-box">×</div>X</div>
-            <button onclick="checkWin()" style="margin-top: auto; width: 80%; background: #4caf50; border: none; padding: 10px; color: white; border-radius: 5px; cursor: pointer; font-weight: bold;">OK</button>
-        </div>
-        <div class="main-content">
-            <h1>Zagadka dnia!</h1>
-            <div class="game-layout">
-                <div style="background: #eee;"></div>
-                <div id="topHints"></div>
-                <div id="leftHints"></div>
-                <div id="grid" class="grid"></div>
-            </div>
-        </div>
+    <h1>Zagadka dnia!</h1>
+
+    <div id="section-connections">
+        <div id="solved-box"></div>
+        <div class="grid-conn" id="conn-grid"></div>
+        <button onclick="checkConn()">Sprawdź połączenie</button>
     </div>
 
-    <div id="catcher-view">
-        <div id="score-board">Złapano: <span id="score">0</span> / 67</div>
-        <canvas id="game-canvas"></canvas>
+    <button id="btn-next-task" class="hidden" onclick="showNonogram()" style="background: #bb86fc;">Zagadka 2</button>
+
+    <div id="section-nonogram" class="hidden">
+        <div id="brush-panel" style="margin-bottom: 15px; display: flex; gap: 5px; justify-content: center;">
+            <button class="btn-brush active" id="btn-c" onclick="setBrush('c')" style="background:#000" title="Czarny"></button>
+            <button class="btn-brush" id="btn-r" onclick="setBrush('r')" style="background:#f00" title="Czerwony"></button>
+            <button class="btn-brush" id="btn-n" onclick="setBrush('n')" style="background:#00f" title="Niebieski"></button>
+            <button class="btn-brush" id="btn-z" onclick="setBrush('z')" style="background:#008000" title="Zielony"></button>
+            <button class="btn-brush" id="btn-b" onclick="setBrush('b')" style="background:#8d4925" title="Brązowy"></button>
+            <button class="btn-brush" id="btn-p" onclick="setBrush('p')" style="background:#ffa500" title="Pomarańczowy"></button>
+            <button class="btn-brush" id="btn-x" onclick="setBrush('x')" style="background:#eee; color: red; font-size: 24px; font-weight: bold; padding: 0;">×</button>
+            <button class="btn-brush" id="btn-0" onclick="setBrush('0')" style="background:#fff; border: 1px dashed #000; color: #000; font-size: 10px;">GUMKA</button>
+        </div>
+        <div class="nonogram-layout">
+            <div style="background:#eee; grid-row: 1; grid-column: 1;"></div>
+            <div id="t-hints" class="hints-top"></div>
+            <div id="l-hints" class="hints-left"></div>
+            <div id="n-grid" class="grid-nonogram"></div>
+        </div>
+        <br>
+        <button onclick="checkNonogram()">Zatwierdź obrazek</button>
+    </div>
+
+    <div id="rebus-section" class="hidden">
+        <img src="rebus.png" id="rebus-img" alt="Rebus">
+        <div style="text-align: center;">
+            <p>Odpowiedź do rebusu:</p>
+            <input type="text" id="rebus-input" placeholder="Wpisz hasło...">
+            <br>
+            <button onclick="checkRebus()">Sprawdź Hasło</button>
+        </div>
+        <h2 id="final-win" class="hidden" style="color: #4caf50; font-size: 2em; text-shadow: 0 0 10px rgba(0,0,0,0.5);">🎉 GRATULACJE! KOMPLET ROZWIĄZANY!</h2>
     </div>
 
 <script>
-    const solution = [
-        [1,1,1,1,0,1,1,1,1], [1,0,0,0,0,0,0,0,1], [1,0,0,0,0,0,0,0,1],
-        [1,1,1,1,0,0,0,0,1], [1,0,0,1,0,0,0,0,1], [1,0,0,1,0,0,0,0,1],
-        [1,1,1,1,0,0,0,0,1], [0,0,0,0,0,0,0,0,0],
-        [2,0,2,0,0,0,2,0,2], [2,2,2,2,0,2,2,2,2]
+    let isMouseDown = false;
+    let currentBrush = 'c';
+
+    // --- DANE POŁĄCZEŃ ---
+    const connCats = [
+        { name: "Schodki", words: ["Schody","Kamień","Piwo","Rzut"], color: "#845ef7" },
+        { name: "Debilard", words: ["Debil","Diament","Kij","Gra"], color: "#f59f00" },
+        { name: "Trip do kela", words: ["Sushi","Zamek","Autobus","Gwiazdy"], color: "#2b8a3e" },
+        { name: "Kamienie występujące w Polsce", words: ["Agat","Ametyst","Fluoryt","Gips"], color: "#c92a2a" }
     ];
+    let connWords = [];
+    connCats.forEach(c => c.words.forEach(w => connWords.push({w, cat: c.name, col: c.color})));
+    let connSelected = [];
+    let connSolved = 0;
 
-    let currentBrush = '1', isDrawing = false;
-    const grid = document.getElementById('grid');
+    function initConn() {
+        const g = document.getElementById("conn-grid");
+        g.innerHTML = "";
+        connWords.sort(() => Math.random() - 0.5).forEach(item => {
+            const d = document.createElement("div");
+            d.className = "tile"; d.innerText = item.w;
+            d.onclick = () => {
+                if(connSelected.includes(item)) { connSelected = connSelected.filter(i=>i!==item); d.classList.remove("selected"); }
+                else if(connSelected.length < 4) { connSelected.push(item); d.classList.add("selected"); }
+            };
+            g.appendChild(d);
+        });
+    }
 
-    // Inicjalizacja Zagadki
-    for(let r=0; r<10; r++) {
-        for(let c=0; c<9; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell'; cell.dataset.r = r; cell.dataset.c = c;
-            cell.onmousedown = () => paint(cell, true);
-            cell.onmouseover = () => { if(isDrawing) paint(cell, false); };
-            grid.appendChild(cell);
+    function checkConn() {
+        if(connSelected.length !== 4) return;
+        const cat = connSelected[0].cat;
+        if(connSelected.every(i => i.cat === cat)) {
+            connSolved++;
+            const group = document.createElement("div");
+            group.className = "group"; group.style.background = connSelected[0].col;
+            group.innerHTML = `<strong>${cat.toUpperCase()}</strong><br>${connSelected.map(i=>i.w).join(", ")}`;
+            document.getElementById("solved-box").appendChild(group);
+            const ws = connSelected.map(i=>i.w);
+            connWords = connWords.filter(i => !ws.includes(i.w));
+            connSelected = []; initConn();
+            if(connSolved === 4) document.getElementById("btn-next-task").classList.remove("hidden");
+        } else {
+            document.querySelectorAll(".tile.selected").forEach(t => {
+                t.classList.add("wrong");
+                setTimeout(() => t.classList.remove("wrong", "selected"), 500);
+            });
+            connSelected = [];
         }
     }
 
-    function setBrush(v) {
-        currentBrush = v;
-        document.querySelectorAll('.brush').forEach(b => b.classList.remove('active'));
-        document.getElementById('b-' + v).classList.add('active');
+    // --- NONOGRAM LOGIKA ---
+    const nonoSol = [
+        "000000000000n00000zz",
+        "000c0000000000bb00zz",
+        "00ccc000c00000bb0000",
+        "0ccccc0ccc0000000r00",
+        "ccccccccccc00p000000"
+    ].map(row => row.split(''));
+
+    function setBrush(b) { 
+        currentBrush = b; 
+        document.querySelectorAll('.btn-brush').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + b).classList.add('active');
     }
 
-    function paint(cell, isClick) {
-        const target = currentBrush === 'x' ? 'marked-x' : 'filled-' + currentBrush;
-        if (isClick && cell.classList.contains(target)) cell.className = 'cell';
-        else { cell.className = 'cell'; if (currentBrush === 'x') cell.classList.add('marked-x'); else cell.classList.add('filled-' + currentBrush); }
+    function paintCell(cell) {
+        cell.className = "cell";
+        if(currentBrush === 'x') cell.classList.add("marked-x");
+        else if(currentBrush !== '0') cell.classList.add("c-" + currentBrush);
     }
 
-    // Podpowiedzi
-    function getHints(arr) {
-        let h = [], c = 0, l = 0;
-        arr.forEach(v => { if(v>0){ if(v===l) c++; else { if(c>0) h.push({c, t:l}); c=1; l=v; } } else { if(c>0) h.push({c, t:l}); c=0; l=0; } });
-        if(c>0) h.push({c, t:l}); return h.length ? h : [{c:0, t:0}];
-    }
+    function initNonogram() {
+        const g = document.getElementById("n-grid");
+        const lh = document.getElementById("l-hints");
+        const th = document.getElementById("t-hints");
+        const colorMap = { c:'#000', r:'#f00', n:'#00f', z:'#008000', b:'#8d4925', p:'#ffa500', '0':'#ccc' };
 
-    const lh = document.getElementById('leftHints'), th = document.getElementById('topHints');
-    for(let i=0; i<10; i++) {
-        const rowHints = getHints(solution[i]);
-        const d = document.createElement('div'); d.className='hint-cell left-group';
-        rowHints.forEach(h => { const s=document.createElement('span'); s.className='hint-num'; s.style.color=h.t==1?'black':'#8d4925'; s.innerText=h.c; d.appendChild(s); });
-        lh.appendChild(d);
-    }
-    for(let i=0; i<9; i++) {
-        const col = []; for(let j=0; j<10; j++) col.push(solution[j][i]);
-        const colHints = getHints(col);
-        const d = document.createElement('div'); d.className='hint-cell top-group';
-        colHints.forEach(h => { const s=document.createElement('span'); s.className='hint-num'; s.style.color=h.t==1?'black':'#8d4925'; s.innerText=h.c; d.appendChild(s); });
-        th.appendChild(d);
-    }
+        for(let r=0; r<5; r++) {
+            const hints = getHints(nonoSol[r]);
+            const d = document.createElement("div"); d.className="hint-group h-l";
+            hints.forEach(h => {
+                const s = document.createElement("span"); s.style.color = colorMap[h.t];
+                s.innerText = h.c; d.appendChild(s);
+            });
+            lh.appendChild(d);
 
-    function checkWin() {
-        const cells = document.querySelectorAll('.cell');
-        let win = true;
-        cells.forEach(cell => {
-            const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c), s = solution[r][c];
-            const h1 = cell.classList.contains('filled-1'), h2 = cell.classList.contains('filled-2');
-            if((s===1 && !h1) || (s===2 && !h2) || (s===0 && (h1||h2))) win = false;
-        });
-
-        if(win) {
-            startOscillation();
-            setTimeout(startCatcherGame, 3000);
-        } else alert("Błąd w obrazku!");
-    }
-
-    function startOscillation() {
-        document.querySelectorAll('.cell').forEach(cell => {
-            const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
-            if (r >= 8) {
-                if (c <= 3) cell.classList.add('animate-up');
-                if (c >= 5) cell.classList.add('animate-down'); // Przeciwfaza (kolumny 5-8 to cała prawa strona brązowa)
+            for(let c=0; c<20; c++) {
+                const cell = document.createElement("div"); cell.className="cell";
+                cell.dataset.r = r; cell.dataset.c = c;
+                cell.onmousedown = (e) => { e.preventDefault(); paintCell(cell); };
+                cell.onmouseenter = () => { if(isMouseDown) paintCell(cell); };
+                g.appendChild(cell);
             }
-        });
+        }
+
+        for(let c=0; c<20; c++) {
+            const col = []; for(let r=0; r<5; r++) col.push(nonoSol[r][c]);
+            const hints = getHints(col);
+            const d = document.createElement("div"); d.className="hint-group h-t";
+            hints.forEach(h => {
+                const s = document.createElement("span"); s.style.color = colorMap[h.t];
+                s.innerText = h.c; d.appendChild(s);
+            });
+            th.appendChild(d);
+        }
     }
 
- 
+    function getHints(arr) {
+        let h = [], c = 0, l = '0';
+        arr.forEach(v => {
+            if(v !== '0') {
+                if(v === l) c++;
+                else { if(c > 0) h.push({c, t: l}); c = 1; l = v; }
+            } else { if(c > 0) h.push({c, t: l}); c = 0; l = '0'; }
+        });
+        if(c > 0) h.push({c, t: l});
+        return h.length ? h : [{c:0, t:'0'}];
+    }
 
-    document.oncontextmenu = (e) => e.preventDefault();
+    function checkNonogram() {
+        const cells = document.querySelectorAll("#n-grid .cell");
+        let ok = true;
+        cells.forEach(cell => {
+            const r = cell.dataset.r, c = cell.dataset.c;
+            const sol = nonoSol[r][c];
+            if(sol === '0') {
+                if(cell.classList.contains("marked-x")) return; // X jest uznawane za puste
+                if(cell.classList.length > 1) ok = false;
+            } else if(!cell.classList.contains("c-" + sol)) ok = false;
+        });
+
+        if(ok) {
+            document.getElementById("rebus-section").classList.remove("hidden");
+            const nonoWidth = document.querySelector(".nonogram-layout").offsetWidth;
+            document.getElementById("rebus-img").style.width = nonoWidth + "px";
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        } else alert("Obrazek zawiera błędy! Spróbuj ponownie.");
+    }
+
+    function showNonogram() {
+        document.getElementById("section-connections").classList.add("hidden");
+        document.getElementById("btn-next-task").classList.add("hidden");
+        document.getElementById("section-nonogram").classList.remove("hidden");
+        initNonogram();
+    }
+
+    function checkRebus() {
+        const val = document.getElementById("rebus-input").value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if(val === "goralki") {
+            document.getElementById("final-win").classList.remove("hidden");
+            document.getElementById("rebus-input").disabled = true;
+            alert("Genialnie! To już koniec na dziś.");
+        } else alert("Niepoprawne hasło. Spróbuj jeszcze raz!");
+    }
+
+    initConn();
 </script>
 </body>
 </html>
