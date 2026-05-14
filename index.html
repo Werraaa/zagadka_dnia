@@ -3,302 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zagadka Dnia</title>
+    <title>Zagadka Dnia - System JSON</title>
     <style>
         :root {
-            --bg-page: #121212;
-            --bg-panel: #1e1e1e;
-            --accent: #bb86fc;
-            --text-main: #e1e1e1;
-            --tile-bg: #2c2c2c;
-            --cell-size: 30px;
+            --bg-page: #121212; --bg-panel: #1e1e1e; --accent: #bb86fc;
+            --accent-soft: #f48fb1; --text-main: #e1e1e1; --tile-bg: #2c2c2c; --cell-size: 30px;
         }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-page); color: var(--text-main); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        header, #archive-header { width: 100%; padding: 20px; background: var(--bg-panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); box-sizing: border-box; }
+        #archive-header { display: none; background: #252525; justify-content: center; }
+        
+        .btn-main { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #archive-section { display: none; background: var(--bg-panel); padding: 20px; border-radius: 15px; margin-top: 20px; width: 90%; max-width: 500px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day { padding: 10px; background: #333; border-radius: 5px; cursor: pointer; }
+        .day.has-puzzle { background: var(--accent-soft); color: #000; font-weight: bold; }
+        .day-header { font-weight: bold; color: var(--accent); }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-page);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            min-height: 100vh;
-            user-select: none;
-        }
-
-        h1 { color: var(--accent); background: rgba(255,255,255,0.05); padding: 10px 30px; border-radius: 15px; cursor: pointer; }
-        .hidden { display: none !important; }
-
-        /* MODUŁ: POŁĄCZENIA */
-        .grid-conn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: 20px 0; }
-        .tile { aspect-ratio: 1/1; background: var(--tile-bg); border: 2px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; font-weight: bold; text-align: center; padding: 5px; text-transform: uppercase; }
+        /* GRY - STYLE */
+        .grid-conn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .tile { aspect-ratio: 1/1; background: var(--tile-bg); border: 2px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; text-transform: uppercase; }
         .tile.selected { background: var(--accent); color: #000; }
-        .tile.wrong { background: #cf6679; animation: shake 0.4s; }
-        .group { padding: 15px; margin: 5px 0; border-radius: 10px; color: white; font-weight: bold; width: 100%; max-width: 500px; text-align: center; }
-
-        /* MODUŁ: OBRAZEK LOGICZNY */
-        .nonogram-layout { display: inline-grid; grid-template-columns: auto auto; background: white; padding: 15px; border-radius: 8px; color: #000; }
+        .group { padding: 15px; margin: 5px 0; border-radius: 10px; color: white; font-weight: bold; text-align: center; }
+        
+        .nonogram-layout { display: inline-grid; grid-template-columns: 100px auto; background: white; padding: 15px; border-radius: 8px; color: #000; margin-top: 20px; }
         .grid-nonogram { display: grid; border: 2px solid #000; grid-column: 2; grid-row: 2; }
-        .cell { width: var(--cell-size); height: var(--cell-size); border: 1px solid #ccc; cursor: crosshair; box-sizing: border-box; position: relative; background: #fff; }
-        .cell.marked-x::after { content: "×"; color: red; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: bold; }
-        
+        .cell { width: var(--cell-size); height: var(--cell-size); border: 1px solid #ccc; position: relative; background: #fff; cursor: crosshair; }
+        .cell.marked-x::after { content: "×"; color: red; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; }
+        .hints-top { display: grid; grid-column: 2; }
+        .hints-left { display: grid; grid-row: 2; }
         .hint-group { display: flex; background: #fff; font-size: 11px; font-weight: 900; }
-        .h-t { flex-direction: column; justify-content: flex-end; align-items: center; border-left: 1px solid #eee; padding-bottom: 5px; }
-        .h-l { flex-direction: row; justify-content: flex-end; align-items: center; border-top: 1px solid #eee; padding-right: 8px; gap: 4px; }
-
-        /* FINALE */
-        #final-section { text-align: center; margin-top: 20px; }
-        #reward-img { max-width: 90vw; border-radius: 15px; box-shadow: 0 0 30px var(--accent); margin-top: 20px; }
-
-        button { background: #4caf50; color: white; border: none; padding: 12px 25px; border-radius: 20px; cursor: pointer; font-weight: bold; margin: 10px; }
-        .btn-brush { width: 45px; height: 45px; border-radius: 8px; border: 2px solid #444; cursor: pointer; transition: 0.2s; }
-        .btn-brush.active { border-color: var(--accent); transform: scale(1.1); box-shadow: 0 0 10px var(--accent); }
+        .h-t { flex-direction: column; justify-content: flex-end; align-items: center; border-left: 1px solid #eee; }
+        .h-l { flex-direction: row; justify-content: flex-end; align-items: center; border-top: 1px solid #eee; padding-right: 5px; gap: 4px; }
         
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .c-c { background-color: #000 !important; } .c-r { background-color: #f00 !important; }
+        .c-n { background-color: #00f !important; } .c-z { background-color: #008000 !important; }
+        .c-b { background-color: #8d4925 !important; } .c-p { background-color: #ffa500 !important; }
     </style>
 </head>
-<body onmousedown="isMouseDown = true" onmouseup="isMouseDown = false">
+<body onmousedown="window.isMouseDown = true" onmouseup="window.isMouseDown = false">
 
-    <h1 onclick="location.reload()">Zagadka Dnia</h1>
-    <div id="status-label" style="font-style: italic; color: #888; margin-bottom: 15px;">Inicjalizacja...</div>
-
-    <div id="puzzle-container"></div>
-
-    <div id="final-section" class="hidden">
-        <h2 style="color: var(--accent); font-size: 2.5rem;">🎉 GRATULACJE!</h2>
-        <div id="reward-container"></div>
+    <div id="archive-header">
+        <button class="btn-main" onclick="toggleArchive()">Otwórz Kalendarz Archiwum</button>
     </div>
 
-<script>
-    let isMouseDown = false;
-    let currentBrush = 'c';
-    
-    const FULL_COLOR_MAP = {
-        'c': '#000000', 'r': '#FF0000', 'n': '#0000FF', 'z': '#008000', 
-        'b': '#8D4925', 'p': '#FFA500', 'y': '#FFFF00', 'm': '#FF00FF',
-        't': '#40E0D0', 'v': '#EE82EE', 'g': '#808080', 'o': '#808000',
-        's': '#87CEEB', 'l': '#00FF00', 'i': '#4B0082', 'k': '#FF7F50',
-        'a': '#7FFFD4', 'w': '#800000', 'e': '#F5F5DC', 'f': '#FF00FF'
-    };
+    <header id="top-header">
+        <h1>Zagadka Dnia</h1>
+        <button class="btn-main" onclick="toggleArchive()">Archiwum</button>
+    </header>
 
-    async function init() {
-        const now = new Date();
-        const dd = String(now.getDate()).padStart(2, '0');
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const baseName = `z${dd}_${mm}`;
+    <div id="archive-section">
+        <div id="calendar-days" class="calendar-grid"></div>
+    </div>
 
-        try {
-            const response = await fetch(`zagadki/${baseName}.json`);
-            if (response.ok) {
-                const data = await response.json();
-                renderPuzzle(data);
-            } else {
-                loadExternalJS(baseName);
-            }
-        } catch (e) {
-            document.getElementById('status-label').innerText = "Błąd połączenia z serwerem.";
-        }
-    }
+    <div id="game-area" style="padding: 20px; text-align: center;">
+        <div id="status-label"></div>
+        <div id="puzzle-content"></div>
+    </div>
 
-    function renderPuzzle(data) {
-        document.getElementById('status-label').innerText = data.title || "";
-        const container = document.getElementById('puzzle-container');
-        container.innerHTML = "";
+    <script>
+        let currentViewDate = new Date();
+        window.isMouseDown = false;
+        let currentBrush = 'c';
 
-        if (data.type === "connections") {
-            initConnectionsEngine(data);
-        } else if (data.type === "nonogram") {
-            initNonogramEngine(data);
-        }
-    }
-
-    // --- SILNIK: POŁĄCZENIA ---
-    function initConnectionsEngine(data) {
-        let selected = [];
-        let solvedCount = 0;
-        let pool = [];
-        data.categories.forEach(cat => cat.words.forEach(w => pool.push({w, cat: cat.name, col: cat.color})));
-        pool.sort(() => Math.random() - 0.5);
-
-        const wrapper = document.createElement("div");
-        wrapper.innerHTML = `<div id="conn-solved"></div><div class="grid-conn" id="conn-grid"></div><button id="btn-check-conn">Sprawdź połączenie</button>`;
-        document.getElementById('puzzle-container').appendChild(wrapper);
-
-        const renderGrid = () => {
-            const grid = document.getElementById("conn-grid");
-            grid.innerHTML = "";
-            pool.forEach(item => {
-                const d = document.createElement("div"); d.className = "tile"; d.innerText = item.w;
-                d.onclick = () => {
-                    if(selected.includes(item)) { selected = selected.filter(i => i !== item); d.classList.remove("selected"); }
-                    else if(selected.length < 4) { selected.push(item); d.classList.add("selected"); }
-                };
-                grid.appendChild(d);
-            });
-        };
-
-        document.getElementById("btn-check-conn").onclick = () => {
-            if(selected.length !== 4) return;
-            const targetCat = selected[0].cat;
-            if(selected.every(i => i.cat === targetCat)) {
-                solvedCount++;
-                const group = document.createElement("div");
-                group.className = "group"; group.style.background = selected[0].col;
-                group.innerHTML = `<strong>${targetCat.toUpperCase()}</strong><br>${selected.map(i=>i.w).join(", ")}`;
-                document.getElementById("conn-solved").appendChild(group);
-                const ws = selected.map(i=>i.w);
-                pool = pool.filter(i => !ws.includes(i.w));
-                selected = []; renderGrid();
-                if(solvedCount === 4) finishPuzzle();
-            } else {
-                document.querySelectorAll(".tile.selected").forEach(t => { t.classList.add("wrong"); setTimeout(() => t.classList.remove("wrong", "selected"), 500); });
-                selected = [];
-            }
-        };
-        renderGrid();
-    }
-
-    // --- SILNIK: OBRAZEK LOGICZNY ---
-    function initNonogramEngine(data) {
-        const sol = data.solution;
-        const rows = sol.length;
-        const cols = sol[0].length;
-
-        // Znajdź tylko kolory użyte w tej zagadce
-        const usedColors = [...new Set(sol.flat())].filter(c => c !== '0');
-        currentBrush = usedColors[0] || 'c';
-
-        // Wstrzyknij style CSS dla użytych kolorów
-        usedColors.forEach(c => {
-            if (!document.getElementById(`style-c-${c}`)) {
-                const s = document.createElement('style');
-                s.id = `style-c-${c}`;
-                s.innerHTML = `.c-${c} { background-color: ${FULL_COLOR_MAP[c]} !important; }`;
-                document.head.appendChild(s);
-            }
-        });
-
-        const wrapper = document.createElement("div");
-        wrapper.innerHTML = `
-            <div id="brush-panel" style="margin-bottom:15px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;"></div>
-            <div class="nonogram-layout">
-                <div style="background:#eee; grid-row:1; grid-column:1;"></div>
-                <div id="t-hints" class="hints-top" style="display:grid; grid-template-columns:repeat(${cols}, var(--cell-size))"></div>
-                <div id="l-hints" class="hints-left" style="display:grid; grid-template-rows:repeat(${rows}, var(--cell-size))"></div>
-                <div id="n-grid" class="grid-nonogram" style="grid-template-columns:repeat(${cols}, var(--cell-size)); grid-template-rows:repeat(${rows}, var(--cell-size))"></div>
-            </div>
-            <br><button id="btn-check-nono">Zatwierdź obrazek</button>
-        `;
-        document.getElementById('puzzle-container').appendChild(wrapper);
-
-        // Buduj paletę tylko z użytych kolorów + X + Gumka
-        const pBox = document.getElementById("brush-panel");
-        [...usedColors, 'x', '0'].forEach(p => {
-            const b = document.createElement("button");
-            b.className = "btn-brush";
-            if(p === 'x') { b.innerText = "×"; b.style.color = "red"; b.style.fontSize = "24px"; b.style.background = "#eee"; }
-            else if(p === '0') { b.innerText = "G"; b.style.background = "#fff"; b.style.fontSize = "10px"; }
-            else { b.style.background = FULL_COLOR_MAP[p]; }
+        // 1. ŁADOWANIE JSON
+        async function loadPuzzle(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const fileName = `zagadki/z${day}_${month}.json`;
             
-            if(p === currentBrush) b.classList.add("active");
-            b.onclick = () => {
-                currentBrush = p;
-                document.querySelectorAll(".btn-brush").forEach(btn => btn.classList.remove("active"));
-                b.classList.add("active");
-            };
-            pBox.appendChild(b);
-        });
+            const container = document.getElementById('puzzle-content');
+            container.innerHTML = "Ładowanie zagadki...";
 
-        const getHints = (arr) => {
-            let h = [], c = 0, l = '0';
-            arr.forEach(v => {
-                if(v !== '0') {
-                    if(v === l) c++;
-                    else { if(c > 0) h.push({c, t: l}); c = 1; l = v; }
-                } else { if(c > 0) h.push({c, t: l}); c = 0; l = '0'; }
-            });
-            if(c > 0) h.push({c, t: l});
-            return h.length ? h : [{c:0, t:'0'}];
-        };
-
-        const g = document.getElementById("n-grid");
-        const lh = document.getElementById("l-hints");
-        const th = document.getElementById("t-hints");
-
-        for(let r=0; r<rows; r++) {
-            const hL = getHints(sol[r]);
-            const d = document.createElement("div"); d.className="hint-group h-l";
-            hL.forEach(h => { const s=document.createElement("span"); s.style.color=(h.t==='0'?'#ccc':FULL_COLOR_MAP[h.t]); s.innerText=h.c; d.appendChild(s); });
-            lh.appendChild(d);
-            for(let c=0; c<cols; c++) {
-                const cell = document.createElement("div"); cell.className="cell";
-                cell.dataset.r = r; cell.dataset.c = c;
-                cell.onmousedown = (e) => { e.preventDefault(); paint(cell); };
-                cell.onmouseenter = () => { if(isMouseDown) paint(cell); };
-                g.appendChild(cell);
+            try {
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                renderStage(data, 0);
+            } catch (e) {
+                container.innerHTML = `Błąd: Nie znaleziono pliku ${fileName}`;
             }
         }
 
-        for(let c=0; c<cols; c++) {
-            const colData = []; for(let r=0; r<rows; r++) colData.push(sol[r][c]);
-            const hT = getHints(colData);
-            const d = document.createElement("div"); d.className="hint-group h-t";
-            hT.forEach(h => { const s=document.createElement("span"); s.style.color=(h.t==='0'?'#ccc':FULL_COLOR_MAP[h.t]); s.innerText=h.c; d.appendChild(s); });
-            th.appendChild(d);
+        // 2. RENDERER ETAPÓW
+        function renderStage(data, index) {
+            const stage = data.stages[index];
+            const container = document.getElementById('puzzle-content');
+            container.innerHTML = `<h2>${stage.title}</h2>`;
+
+            if (stage.type === "connections") {
+                initConnections(stage, () => renderStage(data, index + 1));
+            } else if (stage.type === "nonogram") {
+                initNonogram(stage, () => renderStage(data, index + 1));
+            } else if (stage.type === "rebus") {
+                initRebus(stage);
+            }
         }
 
-        function paint(cell) {
-            cell.className = "cell";
-            if(currentBrush === 'x') cell.classList.add("marked-x");
-            else if(currentBrush !== '0') cell.classList.add("c-" + currentBrush);
+        // --- SILNIK: POŁĄCZENIA ---
+        function initConnections(config, onWin) {
+            const container = document.getElementById('puzzle-content');
+            const solvedBox = document.createElement("div");
+            const grid = document.createElement("div");
+            grid.className = "grid-conn";
+            
+            let selected = [];
+            let words = [];
+            config.categories.forEach(c => c.words.forEach(w => words.push({w, cat: c.name, col: c.color})));
+            words.sort(() => Math.random() - 0.5);
+
+            const draw = () => {
+                grid.innerHTML = "";
+                words.forEach(item => {
+                    const d = document.createElement("div"); d.className = "tile"; d.innerText = item.w;
+                    d.onclick = () => {
+                        if(selected.includes(item)) { selected = selected.filter(i=>i!==item); d.classList.remove("selected"); }
+                        else if(selected.length < 4) { selected.push(item); d.classList.add("selected"); }
+                    };
+                    grid.appendChild(d);
+                });
+            };
+
+            const btn = document.createElement("button"); btn.className="btn-main"; btn.innerText="Sprawdź";
+            btn.onclick = () => {
+                if(selected.length !== 4) return;
+                const cat = selected[0].cat;
+                if(selected.every(i => i.cat === cat)) {
+                    const g = document.createElement("div"); g.className="group"; g.style.background=selected[0].col;
+                    g.innerHTML = `<strong>${cat}</strong><br>${selected.map(i=>i.w).join(", ")}`;
+                    solvedBox.appendChild(g);
+                    const ws = selected.map(i=>i.w);
+                    words = words.filter(i => !ws.includes(i.w));
+                    selected = []; draw();
+                    if(words.length === 0) onWin();
+                } else { alert("Źle!"); selected = []; draw(); }
+            };
+            container.append(solvedBox, grid, btn);
+            draw();
         }
 
-        document.getElementById("btn-check-nono").onclick = () => {
-            const cells = document.querySelectorAll("#n-grid .cell");
-            let ok = true;
-            cells.forEach(cell => {
-                const r = cell.dataset.r, c = cell.dataset.c;
-                const s = sol[r][c];
-                if(s === '0') {
-                    if(!cell.classList.contains("marked-x") && cell.classList.length > 1) ok = false;
-                } else if(!cell.classList.contains("c-" + s)) ok = false;
-            });
-            if(ok) finishPuzzle(); else alert("Obrazek nie jest jeszcze poprawny!");
-        };
-    }
+        // --- SILNIK: NONOGRAM ---
+        function initNonogram(config, onWin) {
+            const container = document.getElementById('puzzle-content');
+            const sol = config.solution.map(r => r.split(''));
+            const rows = sol.length, cols = sol[0].length;
+            
+            // Panel pędzli
+            const panel = document.createElement("div");
+            panel.innerHTML = `
+                <button onclick="currentBrush='c'" style="background:#000; width:30px; height:30px;"></button>
+                <button onclick="currentBrush='x'" style="background:#eee; color:red; width:30px; height:30px;">×</button>
+                <button onclick="currentBrush='0'" style="background:#fff; width:30px; height:30px;">G</button>
+            `;
+            
+            const layout = document.createElement("div"); layout.className = "nonogram-layout";
+            const g = document.createElement("div"); g.className="grid-nonogram";
+            g.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+            
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    const cell = document.createElement("div"); cell.className="cell";
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    cell.onmousedown = () => paint(cell);
+                    cell.onmouseenter = () => { if(window.isMouseDown) paint(cell); };
+                    g.appendChild(cell);
+                }
+            }
+            
+            function paint(cell) {
+                cell.className = "cell";
+                if(currentBrush === 'x') cell.classList.add("marked-x");
+                else if(currentBrush !== '0') cell.classList.add("c-" + currentBrush);
+            }
 
-    async function finishPuzzle() {
-        document.getElementById("puzzle-container").classList.add("hidden");
-        document.getElementById("status-label").classList.add("hidden");
-        document.getElementById("final-section").classList.remove("hidden");
+            const checkBtn = document.createElement("button"); checkBtn.className="btn-main"; checkBtn.innerText="Zatwierdź";
+            checkBtn.onclick = () => {
+                let ok = true;
+                g.querySelectorAll(".cell").forEach(cell => {
+                    const s = sol[cell.dataset.r][cell.dataset.c];
+                    if(s === '0' && cell.classList.length > 1 && !cell.classList.contains("marked-x")) ok = false;
+                    if(s !== '0' && !cell.classList.contains("c-"+s)) ok = false;
+                });
+                if(ok) onWin(); else alert("Błędy!");
+            };
 
-        const now = new Date();
-        const dd = String(now.getDate()).padStart(2, '0');
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const imgBase = `${dd}_${mm}`;
-        
-        const rewardBox = document.getElementById("reward-container");
-        const tryLoad = (ext) => new Promise((res) => {
-            const img = new Image();
-            img.onload = () => res(img);
-            img.onerror = () => res(null);
-            img.src = `${imgBase}.${ext}`;
-        });
+            layout.appendChild(g); container.append(panel, layout, checkBtn);
+        }
 
-        let foundImg = await tryLoad('jpg') || await tryLoad('png');
-        if(foundImg) { foundImg.id = "reward-img"; rewardBox.appendChild(foundImg); }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+        // --- SYSTEM: ARCHIWUM ---
+        function toggleArchive() {
+            const s = document.getElementById('archive-section');
+            s.style.display = s.style.display === 'block' ? 'none' : 'block';
+            renderCalendar();
+        }
 
-    function loadExternalJS(name) {
-        const s = document.createElement('script');
-        s.src = `zagadki/${name}.js`;
-        s.onerror = () => document.getElementById('status-label').innerText = "Brak zagadki na ten dzień.";
-        document.body.appendChild(s);
-    }
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-days'); grid.innerHTML = "";
+            for(let i=1; i<=31; i++) {
+                const d = document.createElement("div"); d.className="day has-puzzle"; d.innerText = i;
+                d.onclick = () => { loadPuzzle(new Date(2026, 4, i)); toggleArchive(); };
+                grid.appendChild(d);
+            }
+        }
 
-    init();
-</script>
+        window.onload = () => loadPuzzle(new Date());
+    </script>
 </body>
 </html>
