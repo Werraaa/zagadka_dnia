@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zagadka Dnia! ✨</title>
     <style>
+        /* Styl pozostaje bez zmian zgodnie z Twoimi preferencjami */
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;500;600&display=swap');
 
         :root {
             --bg-page: #f4f7f9;
             --bg-panel: #ffffff;
-            --accent-cobalt: #1a3a6c; /* Głęboki kobalt */
-            --accent-pink: #bf00ff;   /* Róż dla dostępnych dni */
+            --accent-cobalt: #1a3a6c;
+            --accent-pink: #bf00ff; 
             --text-main: #2c3e50;
             --text-muted: #7f8c8d;
             --calendar-width: 350px;
-            --game-max-width: 1100px; /* Szersze pole na zagadkę */
+            --game-max-width: 1100px;
         }
 
         body {
@@ -130,10 +131,9 @@
             background: #f8f9fa;
             border-radius: 6px;
             font-size: 0.9rem;
-            color: #d1d8dd; /* Nieaktywne dni */
+            color: #d1d8dd;
         }
 
-        /* Dni z zagadką zachowują różowy kolor dla czytelności */
         .day.has-puzzle {
             background: #fff0f3;
             color: var(--accent-pink);
@@ -215,28 +215,24 @@
         let isArchiveOpen = false;
         let availablePuzzles = [];
 
-        // KONFIGURACJA GITHUB
         const repoConfig = {
-            owner: "Werraaa", // Zmień na swój login GitHub
-            repo: "zagadka_dnia", // Zmień na nazwę repozytorium
-            path: "zagadki"     // Folder, w którym leżą pliki .json
+            owner: "Werraaa", 
+            repo: "zagadka_dnia", 
+            path: "zagadki"     
         };
 
-        // Funkcja sprawdzająca pliki na GitHubie
+        // 1. Zmieniono filtr z .json na .js
         async function checkGithubPuzzles() {
             try {
-                // Pobieramy listę plików z folderu przez API GitHub
                 const response = await fetch(`https://api.github.com/repos/${repoConfig.owner}/${repoConfig.repo}/contents/${repoConfig.path}`);
                 const files = await response.json();
                 
                 if (Array.isArray(files)) {
-                    // Mapujemy nazwy plików z formatu zDD_MM.json na RRRR-MM-DD
-                    // Zakładamy bieżący rok dla uproszczenia lub wyciągamy z kontekstu
                     const year = new Date().getFullYear();
                     availablePuzzles = files
-                        .filter(f => f.name.endsWith('.json'))
+                        .filter(f => f.name.endsWith('.js')) // Szukamy plików JavaScript
                         .map(f => {
-                            const match = f.name.match(/z(\d{2})_(\d{2})\.json/);
+                            const match = f.name.match(/z(\d{2})_(\d{2})\.js/);
                             if (match) return `${year}-${match[2]}-${match[1]}`;
                             return null;
                         }).filter(d => d !== null);
@@ -245,7 +241,6 @@
                 }
             } catch (e) {
                 console.error("Błąd pobierania listy zagadek:", e);
-                // Fallback do ręcznej listy jeśli API zawiedzie
                 availablePuzzles = ["2026-05-13", "2026-05-14"];
                 renderCalendar();
             }
@@ -254,21 +249,46 @@
         function getFileNameForDate(date) {
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
-            return `z${day}_${month}.json`;
+            return `z${day}_${month}.js`;
         }
 
-        function loadPuzzle(date) {
+        // 2. Funkcja loadPuzzle teraz dynamicznie importuje plik JS
+        async function loadPuzzle(date) {
             const fileName = getFileNameForDate(date);
             const statusLabel = document.getElementById('status-label');
-            statusLabel.innerText = "Aktywne wyzwanie: " + fileName;
+            const puzzleContent = document.getElementById('puzzle-content');
             
-            document.getElementById('puzzle-content').innerHTML = `
-                <div style="text-align: center;">
-                    <h3 style="font-size: 1.8rem;">Wczytywanie...</h3>
-                    <p>Pobieram dane z serwera...</p>
-                </div>
-            `;
-            // Tu docelowo: fetch(`https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${repoConfig.path}/${fileName}`)
+            statusLabel.innerText = "Aktywne wyzwanie: " + fileName;
+            puzzleContent.innerHTML = `<h3>Wczytywanie kodu...</h3>`;
+
+            // Ścieżka do surowego pliku na GitHub
+            const url = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${repoConfig.path}/${fileName}`;
+
+            try {
+                // Czyścimy poprzednie skrypty o tej samej nazwie, jeśli istnieją
+                const oldScript = document.getElementById('puzzle-script');
+                if (oldScript) oldScript.remove();
+
+                // Tworzymy element script, aby "odpalić" plik JS
+                const script = document.createElement('script');
+                script.id = 'puzzle-script';
+                script.src = url;
+                
+                // Zakładamy, że plik JS wywoła jakąś funkcję globalną, np. initPuzzle()
+                // Albo po prostu po załadowaniu skryptu wywołujemy akcję
+                script.onload = () => {
+                    console.log(`${fileName} załadowany pomyślnie.`);
+                    // Jeśli w Twoim pliku z14_05.js jest np. funkcja start()
+                    if (typeof initPuzzle === "function") {
+                        initPuzzle(puzzleContent);
+                    }
+                };
+
+                document.body.appendChild(script);
+
+            } catch (err) {
+                puzzleContent.innerHTML = `<p style="color:red;">Nie udało się odnaleźć lub uruchomić pliku ${fileName}</p>`;
+            }
         }
 
         function toggleArchive() {
@@ -306,9 +326,7 @@
 
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateObj = new Date(year, month, d);
-                // Proste formatowanie do porównania z listą
                 const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'day';
                 dayDiv.innerText = d;
@@ -321,7 +339,6 @@
                         document.getElementById('archive-header').style.display = 'flex';
                     };
                 }
-
                 grid.appendChild(dayDiv);
             }
         }
