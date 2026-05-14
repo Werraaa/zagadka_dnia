@@ -1,0 +1,46 @@
+{
+  "date": "2026-05-13",
+  "type": "standard_sequence",
+  "connections": {
+    "categories": [
+      {
+        "name": "Schodki",
+        "words": ["Schody", "Kamień", "Piwo", "Rzut"],
+        "color": "#845ef7"
+      },
+      {
+        "name": "Debilard",
+        "words": ["Debil", "Diament", "Kij", "Gra"],
+        "color": "#f59f00"
+      },
+      {
+        "name": "Trip do kela",
+        "words": ["Sushi", "Zamek", "Autobus", "Gwiazdy"],
+        "color": "#2b8a3e"
+      },
+      {
+        "name": "Kamienie występujące w Polsce",
+        "words": ["Agat", "Ametyst", "Fluoryt", "Gips"],
+        "color": "#c92a2a"
+      }
+    ]
+  },
+  "nonogram": {
+    "solution": [
+      "000000000000n00000zz",
+      "000c0000000000bb00zz",
+      "00ccc000c00000bb0000",
+      "0ccccc0ccc0000000r00",
+      "ccccccccccc00p000000"
+    ],
+    "width": 20,
+    "height": 5
+  },
+  "rebus": {
+    "answer": "goralki",
+    "image": "rebus.png"
+  },
+  "final": {
+    "image": "goralki.jpg"
+  }
+}
