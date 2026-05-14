@@ -1,0 +1,9 @@
+{
+  "type": "nonogram",
+  "title": "Kolorowy Kwiat",
+  "solution": [
+    ["0", "z", "0"],
+    ["r", "y", "r"],
+    ["0", "r", "0"]
+  ]
+}
