@@ -3,49 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zagadka Dnia - System JSON</title>
+    <title>Zagadka Dnia - Silnik JS</title>
     <style>
+        /* Zachowuję Twoje style, dodaję drobne poprawki dla kontenera gry */
         :root {
-            --bg-page: #121212; --bg-panel: #1e1e1e; --accent: #bb86fc;
-            --accent-soft: #f48fb1; --text-main: #e1e1e1; --tile-bg: #2c2c2c; --cell-size: 30px;
+            --bg-page: #121212;
+            --bg-panel: #1e1e1e;
+            --accent: #bb86fc;
+            --accent-soft: #f48fb1;
+            --text-main: #e1e1e1;
+            --tile-bg: #2c2c2c;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-page); color: var(--text-main); margin: 0; display: flex; flex-direction: column; align-items: center; }
-        
-        header, #archive-header { width: 100%; padding: 20px; background: var(--bg-panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); box-sizing: border-box; }
-        #archive-header { display: none; background: #252525; justify-content: center; }
-        
-        .btn-main { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #archive-section { display: none; background: var(--bg-panel); padding: 20px; border-radius: 15px; margin-top: 20px; width: 90%; max-width: 500px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header, #archive-header {
+            width: 100%;
+            padding: 20px;
+            background: var(--bg-panel);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        #archive-header { display: none; background: #252525; border-bottom: 1px solid #444; }
+
+        .btn-main {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #main-container { width: 100%; max-width: 900px; padding: 20px; }
+
+        #archive-section {
+            display: none;
+            background: var(--bg-panel);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
         .day { padding: 10px; background: #333; border-radius: 5px; cursor: pointer; }
         .day.has-puzzle { background: var(--accent-soft); color: #000; font-weight: bold; }
-        .day-header { font-weight: bold; color: var(--accent); }
+        .day.empty { background: transparent; cursor: default; }
 
-        /* GRY - STYLE */
-        .grid-conn { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
-        .tile { aspect-ratio: 1/1; background: var(--tile-bg); border: 2px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; padding: 5px; text-transform: uppercase; }
-        .tile.selected { background: var(--accent); color: #000; }
-        .group { padding: 15px; margin: 5px 0; border-radius: 10px; color: white; font-weight: bold; text-align: center; }
-        
-        .nonogram-layout { display: inline-grid; grid-template-columns: 100px auto; background: white; padding: 15px; border-radius: 8px; color: #000; margin-top: 20px; }
-        .grid-nonogram { display: grid; border: 2px solid #000; grid-column: 2; grid-row: 2; }
-        .cell { width: var(--cell-size); height: var(--cell-size); border: 1px solid #ccc; position: relative; background: #fff; cursor: crosshair; }
-        .cell.marked-x::after { content: "×"; color: red; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; }
-        .hints-top { display: grid; grid-column: 2; }
-        .hints-left { display: grid; grid-row: 2; }
-        .hint-group { display: flex; background: #fff; font-size: 11px; font-weight: 900; }
-        .h-t { flex-direction: column; justify-content: flex-end; align-items: center; border-left: 1px solid #eee; }
-        .h-l { flex-direction: row; justify-content: flex-end; align-items: center; border-top: 1px solid #eee; padding-right: 5px; gap: 4px; }
-        
-        .c-c { background-color: #000 !important; } .c-r { background-color: #f00 !important; }
-        .c-n { background-color: #00f !important; } .c-z { background-color: #008000 !important; }
-        .c-b { background-color: #8d4925 !important; } .c-p { background-color: #ffa500 !important; }
+        #game-canvas {
+            width: 100%;
+            min-height: 400px;
+            background: var(--tile-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
-<body onmousedown="window.isMouseDown = true" onmouseup="window.isMouseDown = false">
+<body>
 
     <div id="archive-header">
-        <button class="btn-main" onclick="toggleArchive()">Otwórz Kalendarz Archiwum</button>
+        <button class="btn-main" onclick="toggleArchive()">Otwórz Kalendarz</button>
+        <span id="mini-status"></span>
     </div>
 
     <header id="top-header">
@@ -53,161 +92,109 @@
         <button class="btn-main" onclick="toggleArchive()">Archiwum</button>
     </header>
 
-    <div id="archive-section">
-        <div id="calendar-days" class="calendar-grid"></div>
-    </div>
+    <div id="main-container">
+        <div id="archive-section">
+            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px;">
+                <button class="btn-main" onclick="changeMonth(-1)">&lt;</button>
+                <h2 id="current-month-year"></h2>
+                <button class="btn-main" onclick="changeMonth(1)">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="calendar-days"></div>
+        </div>
 
-    <div id="game-area" style="padding: 20px; text-align: center;">
-        <div id="status-label"></div>
-        <div id="puzzle-content"></div>
+        <div id="game-area">
+            <div id="status-label" style="margin-bottom:10px; color:#aaa;">Inicjalizacja...</div>
+            <div id="game-canvas">
+                <p>Czekam na załadowanie skryptu...</p>
+            </div>
+        </div>
     </div>
 
     <script>
         let currentViewDate = new Date();
-        window.isMouseDown = false;
-        let currentBrush = 'c';
+        let isArchiveOpen = false;
 
-        // 1. ŁADOWANIE JSON
-        async function loadPuzzle(date) {
+        function getFileNameForDate(date) {
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
-            const fileName = `zagadki/z${day}_${month}.json`;
-            
-            const container = document.getElementById('puzzle-content');
-            container.innerHTML = "Ładowanie zagadki...";
-
-            try {
-                const response = await fetch(fileName);
-                if (!response.ok) throw new Error();
-                const data = await response.json();
-                renderStage(data, 0);
-            } catch (e) {
-                container.innerHTML = `Błąd: Nie znaleziono pliku ${fileName}`;
-            }
+            return `z${day}_${month}.js`;
         }
 
-        // 2. RENDERER ETAPÓW
-        function renderStage(data, index) {
-            const stage = data.stages[index];
-            const container = document.getElementById('puzzle-content');
-            container.innerHTML = `<h2>${stage.title}</h2>`;
-
-            if (stage.type === "connections") {
-                initConnections(stage, () => renderStage(data, index + 1));
-            } else if (stage.type === "nonogram") {
-                initNonogram(stage, () => renderStage(data, index + 1));
-            } else if (stage.type === "rebus") {
-                initRebus(stage);
-            }
-        }
-
-        // --- SILNIK: POŁĄCZENIA ---
-        function initConnections(config, onWin) {
-            const container = document.getElementById('puzzle-content');
-            const solvedBox = document.createElement("div");
-            const grid = document.createElement("div");
-            grid.className = "grid-conn";
+        // --- KLUCZOWA ZMIANA: ŁADOWANIE PLIKU JS ---
+        function loadPuzzleScript(date) {
+            const fileName = getFileNameForDate(date);
+            const statusLabel = document.getElementById('status-label');
+            const canvas = document.getElementById('game-canvas');
             
-            let selected = [];
-            let words = [];
-            config.categories.forEach(c => c.words.forEach(w => words.push({w, cat: c.name, col: c.color})));
-            words.sort(() => Math.random() - 0.5);
+            statusLabel.innerText = `Ładowanie skryptu: ${fileName}...`;
+            canvas.innerHTML = ''; // Czyszczenie kontenera
 
-            const draw = () => {
-                grid.innerHTML = "";
-                words.forEach(item => {
-                    const d = document.createElement("div"); d.className = "tile"; d.innerText = item.w;
-                    d.onclick = () => {
-                        if(selected.includes(item)) { selected = selected.filter(i=>i!==item); d.classList.remove("selected"); }
-                        else if(selected.length < 4) { selected.push(item); d.classList.add("selected"); }
-                    };
-                    grid.appendChild(d);
-                });
-            };
+            // Usuwamy poprzedni skrypt zagadki, jeśli istniał
+            const oldScript = document.getElementById('active-puzzle-script');
+            if (oldScript) oldScript.remove();
 
-            const btn = document.createElement("button"); btn.className="btn-main"; btn.innerText="Sprawdź";
-            btn.onclick = () => {
-                if(selected.length !== 4) return;
-                const cat = selected[0].cat;
-                if(selected.every(i => i.cat === cat)) {
-                    const g = document.createElement("div"); g.className="group"; g.style.background=selected[0].col;
-                    g.innerHTML = `<strong>${cat}</strong><br>${selected.map(i=>i.w).join(", ")}`;
-                    solvedBox.appendChild(g);
-                    const ws = selected.map(i=>i.w);
-                    words = words.filter(i => !ws.includes(i.w));
-                    selected = []; draw();
-                    if(words.length === 0) onWin();
-                } else { alert("Źle!"); selected = []; draw(); }
-            };
-            container.append(solvedBox, grid, btn);
-            draw();
-        }
-
-        // --- SILNIK: NONOGRAM ---
-        function initNonogram(config, onWin) {
-            const container = document.getElementById('puzzle-content');
-            const sol = config.solution.map(r => r.split(''));
-            const rows = sol.length, cols = sol[0].length;
+            const script = document.createElement('script');
+            script.id = 'active-puzzle-script';
+            script.src = `zagadki/${fileName}`;
             
-            // Panel pędzli
-            const panel = document.createElement("div");
-            panel.innerHTML = `
-                <button onclick="currentBrush='c'" style="background:#000; width:30px; height:30px;"></button>
-                <button onclick="currentBrush='x'" style="background:#eee; color:red; width:30px; height:30px;">×</button>
-                <button onclick="currentBrush='0'" style="background:#fff; width:30px; height:30px;">G</button>
-            `;
-            
-            const layout = document.createElement("div"); layout.className = "nonogram-layout";
-            const g = document.createElement("div"); g.className="grid-nonogram";
-            g.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
-            
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    const cell = document.createElement("div"); cell.className="cell";
-                    cell.dataset.r = r; cell.dataset.c = c;
-                    cell.onmousedown = () => paint(cell);
-                    cell.onmouseenter = () => { if(window.isMouseDown) paint(cell); };
-                    g.appendChild(cell);
+            script.onload = () => {
+                statusLabel.innerText = `Uruchomiono: ${fileName}`;
+                // Zakładamy, że każdy plik zagadki ma funkcję initPuzzle(container)
+                if (typeof initPuzzle === 'function') {
+                    initPuzzle(canvas);
+                } else {
+                    canvas.innerHTML = `<p style="color:red;">Błąd: Plik ${fileName} nie posiada funkcji initPuzzle!</p>`;
                 }
-            }
-            
-            function paint(cell) {
-                cell.className = "cell";
-                if(currentBrush === 'x') cell.classList.add("marked-x");
-                else if(currentBrush !== '0') cell.classList.add("c-" + currentBrush);
-            }
-
-            const checkBtn = document.createElement("button"); checkBtn.className="btn-main"; checkBtn.innerText="Zatwierdź";
-            checkBtn.onclick = () => {
-                let ok = true;
-                g.querySelectorAll(".cell").forEach(cell => {
-                    const s = sol[cell.dataset.r][cell.dataset.c];
-                    if(s === '0' && cell.classList.length > 1 && !cell.classList.contains("marked-x")) ok = false;
-                    if(s !== '0' && !cell.classList.contains("c-"+s)) ok = false;
-                });
-                if(ok) onWin(); else alert("Błędy!");
             };
 
-            layout.appendChild(g); container.append(panel, layout, checkBtn);
+            script.onerror = () => {
+                statusLabel.innerText = `Błąd`;
+                canvas.innerHTML = `<p>Nie znaleziono zagadki dla tej daty (${fileName}).</p>`;
+            };
+
+            document.body.appendChild(script);
         }
 
-        // --- SYSTEM: ARCHIWUM ---
+        // Logika kalendarza (uproszczona)
         function toggleArchive() {
-            const s = document.getElementById('archive-section');
-            s.style.display = s.style.display === 'block' ? 'none' : 'block';
-            renderCalendar();
+            isArchiveOpen = !isArchiveOpen;
+            document.getElementById('archive-section').style.display = isArchiveOpen ? 'block' : 'none';
+            if (isArchiveOpen) renderCalendar();
         }
 
         function renderCalendar() {
-            const grid = document.getElementById('calendar-days'); grid.innerHTML = "";
-            for(let i=1; i<=31; i++) {
-                const d = document.createElement("div"); d.className="day has-puzzle"; d.innerText = i;
-                d.onclick = () => { loadPuzzle(new Date(2026, 4, i)); toggleArchive(); };
-                grid.appendChild(d);
+            const grid = document.getElementById('calendar-days');
+            const monthYearLabel = document.getElementById('current-month-year');
+            grid.innerHTML = '';
+
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            const monthNames = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"];
+            monthYearLabel.innerText = `${monthNames[month]} ${year}`;
+
+            // (Tutaj wstaw logikę generowania dni, którą miałeś wcześniej...)
+            // Skrócony przykład:
+            for (let d = 1; d <= 31; d++) { 
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day has-puzzle';
+                dayDiv.innerText = d;
+                dayDiv.onclick = () => {
+                    const selectedDate = new Date(year, month, d);
+                    loadPuzzleScript(selectedDate);
+                    document.getElementById('top-header').style.display = 'none';
+                    document.getElementById('archive-header').style.display = 'flex';
+                    document.getElementById('mini-status').innerText = getFileNameForDate(selectedDate);
+                };
+                grid.appendChild(dayDiv);
             }
         }
 
-        window.onload = () => loadPuzzle(new Date());
+        function changeMonth(delta) {
+            currentViewDate.setMonth(currentViewDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        window.onload = () => loadPuzzleScript(new Date());
     </script>
 </body>
 </html>
