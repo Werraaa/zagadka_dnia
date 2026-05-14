@@ -262,7 +262,7 @@
             puzzleContent.innerHTML = `<h3>Wczytywanie kodu...</h3>`;
 
             // Ścieżka do surowego pliku na GitHub
-            const url = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${repoConfig.path}/${fileName}`;
+            const url = `https://cdn.jsdelivr.net/gh/${repoConfig.owner}/${repoConfig.repo}@main/${repoConfig.path}/${fileName}`;
 
             try {
                 // Czyścimy poprzednie skrypty o tej samej nazwie, jeśli istnieją
