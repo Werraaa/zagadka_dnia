@@ -1,6 +1,9 @@
-// Tradycyjna, bezpośrednia deklaracja funkcji globalnej - index.html zauważy ją natychmiast!
+// =========================================================================
+// PANCERNE ZABEZPIECZENIE REJESTRACJI FUNKCJI
+// Rejestrujemy funkcję na każdy możliwy sposób, aby index.html wykrył ją natychmiast
+// =========================================================================
+
 function initPuzzle(puzzleContent) {
-    
     // Czyszczenie ekranu z domyślnego tekstu ładowania
     puzzleContent.innerHTML = "";
 
@@ -154,7 +157,7 @@ function initPuzzle(puzzleContent) {
         }
     `;
 
-    // Czyszczenie starych styli, jeśli gracz klikał coś wcześniej
+    // Czyszczenie duplikatów styli
     const oldStyle = document.getElementById("g2048-styles");
     if (oldStyle) oldStyle.remove();
 
@@ -163,7 +166,7 @@ function initPuzzle(puzzleContent) {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // --- 2. BUDOWANIE STRUKTURY HTML ---
+    // --- 2. BUDOWANIE HTML ---
     const gameWrapper = document.createElement("div");
     gameWrapper.classList.add("game-2048-wrapper");
 
@@ -186,7 +189,7 @@ function initPuzzle(puzzleContent) {
     `;
     puzzleContent.appendChild(gameWrapper);
 
-    // --- 3. LOGIKA SILNIKA GRY ---
+    // --- 3. LOGIKA GRY ---
     const GRID_SIZE = 4;
     const gridContainer = document.getElementById('g2048-grid-container');
     const tileContainer = document.getElementById('g2048-tile-container');
@@ -194,7 +197,7 @@ function initPuzzle(puzzleContent) {
     const gameMessage = document.getElementById('g2048-message');
     const retryButton = document.getElementById('g2048-retry');
 
-    // Skoro kod jest w /zagadki/ a zdjęcia w katalogu głównym (poziom wyżej), używamy ścieżki relatywnej
+    // Zdjęcia poziom wyżej (katalog główny)
     const githubImgBaseUrl = "../";
 
     let board = [];
@@ -252,7 +255,6 @@ function initPuzzle(puzzleContent) {
                     tile.classList.add('g2048-tile');
                     tile.innerText = value;
                     
-                    // Pobieranie zdjęcia poziom wyżej
                     tile.style.backgroundImage = `url('${githubImgBaseUrl}${value}.jpg')`;
 
                     let topPosition = r * (currentCellSize + currentCellGap);
@@ -282,17 +284,7 @@ function initPuzzle(puzzleContent) {
         return arr;
     }
 
-    function rotateBoardClockwise() {
-        let nextBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; r++) { // poprawione sprawdzanie pętli obrotu
-                nextBoard[c][GRID_SIZE - 1 - r] = board[r][c];
-            }
-        }
-        board = nextBoard;
-    }
-    
-    // Uproszczona wersja rotacji bez ryzyka pętli
+    // BEZBŁĘDNA, bezpieczna wersja obracania planszy (naprawiona pętla nieskończona)
     function rotateBoard() {
         let nextBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
         for (let r = 0; r < GRID_SIZE; r++) {
@@ -341,7 +333,7 @@ function initPuzzle(puzzleContent) {
         return true;
     }
 
-    // Sterowanie klawiaturą
+    // Klawiatura
     const keydownHandler = (e) => {
         if (!document.getElementById('g2048-game-container')) {
             window.removeEventListener('keydown', keydownHandler);
@@ -359,7 +351,7 @@ function initPuzzle(puzzleContent) {
     };
     window.addEventListener('keydown', keydownHandler);
 
-    // Sterowanie dotykowe
+    // Dotyk mobilny
     let touchStartX = 0;
     let touchStartY = 0;
     const gameContainer = document.getElementById('g2048-game-container');
@@ -400,6 +392,8 @@ function initPuzzle(puzzleContent) {
     };
     window.addEventListener('resize', resizeHandler);
 
-    // Wywołanie startowe gry
     initGame();
 }
+
+// Przypisanie do obiektu window na wypadek opóźnienia skryptu onload
+window.initPuzzle = initPuzzle;
