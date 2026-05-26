@@ -66,7 +66,7 @@
             width: calc(var(--cell-size) * var(--grid-size) + var(--cell-gap) * (var(--grid-size) - 1));
             height: calc(var(--cell-size) * var(--grid-size) + var(--cell-gap) * (var(--grid-size) - 1));
             box-sizing: content-box;
-            touch-action: none; /* Blokuje domyślne przewijanie na telefonach */
+            touch-action: none;
         }
 
         .grid-container {
@@ -103,12 +103,10 @@
             font-weight: bold;
             font-size: 32px;
             color: #fff;
-            /* Czytelność cyfr na tle obrazków: cień oraz lekkie przyciemnienie */
             text-shadow: 0px 2px 5px rgba(0,0,0,0.9), 0px 0px 10px rgba(0,0,0,0.5);
             transition: transform 100ms ease-in-out;
         }
 
-        /* Styl nakładki końca gry */
         .game-message {
             display: none;
             position: absolute;
@@ -147,7 +145,6 @@
             100% { opacity: 1; }
         }
 
-        /* Responsywność dla urządzeń mobilnych */
         @media (max-width: 450px) {
             :root {
                 --cell-size: 70px;
@@ -174,29 +171,24 @@
             <button class="retry-button" onclick="resetGame()">Zagraj ponownie</button>
         </div>
 
-        <div class="grid-container" id="grid-container">
-            </div>
-        <div class="tile-container" id="tile-container">
-            </div>
+        <div class="grid-container" id="grid-container"></div>
+        <div class="tile-container" id="tile-container"></div>
     </div>
 
     <script>
         const GRID_SIZE = 4;
-        const CELL_SIZE = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
-        const CELL_GAP = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-gap'));
         
         const gridContainer = document.getElementById('grid-container');
         const tileContainer = document.getElementById('tile-container');
         const scoreDisplay = document.getElementById('score');
         const gameMessage = document.getElementById('game-message');
 
-        // URL do repozytorium na GitHubie z obrazkami raw
-        const githubImgBaseUrl = "https://raw.githubusercontent.com/Werraaa/zagadka_dnia/main/";
+        // Ścieżka relatywna wskazująca wyjście z folderu "zagadki" poziom wyżej, do głównego katalogu ze zdjęciami
+        const githubImgBaseUrl = "../";
 
         let board = [];
         let score = 0;
 
-        // Inicjalizacja tła siatki
         function createGridBackground() {
             gridContainer.innerHTML = '';
             for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
@@ -206,7 +198,6 @@
             }
         }
 
-        // Rozpoczęcie nowej gry
         function initGame() {
             createGridBackground();
             board = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
@@ -219,7 +210,6 @@
             drawTiles();
         }
 
-        // Dodanie losowego kafelka (2 lub 4) w wolne miejsce
         function addRandomTile() {
             let emptyCells = [];
             for (let r = 0; r < GRID_SIZE; r++) {
@@ -235,14 +225,12 @@
             }
         }
 
-        // Pobranie dynamicznych wymiarów (w razie zmiany wielkości okna/mobilności)
         function getLayoutStyles() {
             const currentCellSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
             const currentCellGap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-gap'));
             return { currentCellSize, currentCellGap };
         }
 
-        // Rysowanie kafelków na planszy
         function drawTiles() {
             tileContainer.innerHTML = '';
             const { currentCellSize, currentCellGap } = getLayoutStyles();
@@ -255,10 +243,9 @@
                         tile.classList.add('tile');
                         tile.innerText = value;
                         
-                        // Pobranie zdjęcia z Twojego GitHub z odpowiednią nazwą (np. 2.jpg, 4.jpg, itd.)
+                        // Ładowanie obrazka z folderu poziom wyżej
                         tile.style.backgroundImage = `url('${githubImgBaseUrl}${value}.jpg')`;
 
-                        // Pozycjonowanie kafelka na siatce
                         let topPosition = r * (currentCellSize + currentCellGap);
                         let leftPosition = c * (currentCellSize + currentCellGap);
                         tile.style.top = `${topPosition}px`;
@@ -270,12 +257,8 @@
             }
         }
 
-        // Logika ruchu i łączenia kafelków (ogólna dla wszystkich kierunków)
         function slide(row) {
-            // Usuń zera: [2, 0, 2, 4] -> [2, 2, 4]
             let arr = row.filter(val => val !== 0);
-            
-            // Połącz sąsiednie takie same liczby: [2, 2, 4] -> [4, 0, 4]
             for (let i = 0; i < arr.length - 1; i++) {
                 if (arr[i] === arr[i + 1]) {
                     arr[i] *= 2;
@@ -283,8 +266,6 @@
                     arr[i + 1] = 0;
                 }
             }
-            
-            // Ponownie usuń zera i uzupełnij końcówkę zerami do rozmiaru planszy
             arr = arr.filter(val => val !== 0);
             while (arr.length < GRID_SIZE) {
                 arr.push(0);
@@ -302,29 +283,23 @@
             board = nextBoard;
         }
 
-        // Wykonanie ruchu w zadanym kierunku
         function move(direction) {
             let oldBoard = JSON.stringify(board);
-            
-            // Obracamy planszę tak, aby zawsze wykonywać ruch "w lewo"
-            // 0 obrotów dla 'Left', 1 dla 'Down', 2 dla 'Right', 3 dla 'Up'
             let rotations = 0;
+            
             if (direction === 'Down') rotations = 1;
             if (direction === 'Right') rotations = 2;
             if (direction === 'Up') rotations = 3;
 
             for (let i = 0; i < rotations; i++) rotateBoardClockwise();
 
-            // Przesunięcie kafelków w lewo
             for (let r = 0; r < GRID_SIZE; r++) {
                 board[r] = slide(board[r]);
             }
 
-            // Obrót powrotny do oryginalnej orientacji
             let returnRotations = (4 - rotations) % 4;
             for (let i = 0; i < returnRotations; i++) rotateBoardClockwise();
 
-            // Jeśli stan planszy się zmienił, dodaj nowy kafelek i zaktualizuj ekran
             if (oldBoard !== JSON.stringify(board)) {
                 addRandomTile();
                 scoreDisplay.innerText = score;
@@ -335,74 +310,8 @@
             }
         }
 
-        // Sprawdzanie czy gra się skończyła
         function isGameOver() {
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     if (board[r][c] === 0) return false;
-                    if (r < GRID_SIZE - 1 && board[r][r] === board[r + 1][c]) return false; // To poprawione niżej dla poprawnych koordynatów
-                    if (r < GRID_SIZE - 1 && board[r][c] === board[r + 1][c]) return false;
-                    if (c < GRID_SIZE - 1 && board[r][c] === board[r][c + 1]) return false;
-                }
-            }
-            return true;
-        }
-
-        // Obsługa klawiatury
-        window.addEventListener('keydown', (e) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault(); // Blokada scrollowania strony strzałkami
-            }
-            switch (e.key) {
-                case 'ArrowLeft':  move('Left');  break;
-                case 'ArrowRight': move('Right'); break;
-                case 'ArrowUp':    move('Up');    break;
-                case 'ArrowDown':  move('Down');  break;
-            }
-        });
-
-        // Obsługa sterowania dotykowego (Swipy na telefonach)
-        let touchStartX = 0;
-        let touchStartY = 0;
-        const gameContainer = document.getElementById('game-container');
-
-        gameContainer.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
-
-        gameContainer.addEventListener('touchend', (e) => {
-            let touchEndX = e.changedTouches[0].screenX;
-            let touchEndY = e.changedTouches[0].screenY;
-            
-            let diffX = touchEndX - touchStartX;
-            let diffY = touchEndY - touchStartY;
-            
-            // Minimalna odległość przesunięcia, aby uznać to za swipe
-            const threshold = 30; 
-
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > threshold) {
-                    if (diffX > 0) move('Right');
-                    else move('Left');
-                }
-            } else {
-                if (Math.abs(diffY) > threshold) {
-                    if (diffY > 0) move('Down');
-                    else move('Up');
-                }
-            }
-        }, { passive: true });
-
-        function resetGame() {
-            initGame();
-        }
-
-        // Reagowanie na zmianę rozmiaru okna, by kafelki się odpowiednio skalowały
-        window.addEventListener('resize', drawTiles);
-
-        // Start gry przy załadowaniu strony
-        initGame();
-    </script>
-</body>
-</html>
+                    if (r < GRID
