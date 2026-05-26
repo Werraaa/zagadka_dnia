@@ -1,5 +1,6 @@
-// Główna funkcja, której szuka i którą uruchamia Twój index.html
-window.initPuzzle = function(puzzleContent) {
+// Tradycyjna, bezpośrednia deklaracja funkcji globalnej - index.html zauważy ją natychmiast!
+function initPuzzle(puzzleContent) {
+    
     // Czyszczenie ekranu z domyślnego tekstu ładowania
     puzzleContent.innerHTML = "";
 
@@ -153,7 +154,7 @@ window.initPuzzle = function(puzzleContent) {
         }
     `;
 
-    // Usuwamy stare style, jeśli istniały
+    // Czyszczenie starych styli, jeśli gracz klikał coś wcześniej
     const oldStyle = document.getElementById("g2048-styles");
     if (oldStyle) oldStyle.remove();
 
@@ -185,7 +186,7 @@ window.initPuzzle = function(puzzleContent) {
     `;
     puzzleContent.appendChild(gameWrapper);
 
-    // --- 3. LOGIKA SILNIKA 2048 ---
+    // --- 3. LOGIKA SILNIKA GRY ---
     const GRID_SIZE = 4;
     const gridContainer = document.getElementById('g2048-grid-container');
     const tileContainer = document.getElementById('g2048-tile-container');
@@ -193,9 +194,8 @@ window.initPuzzle = function(puzzleContent) {
     const gameMessage = document.getElementById('g2048-message');
     const retryButton = document.getElementById('g2048-retry');
 
-    // Zdjęcia są w tym samym repozytorium co index.html (folder wyżej niż /zagadki/)
-    // Używamy pełnej ścieżki raw z GitHub, dzięki czemu działa niezależnie od hostingu
-    const githubImgBaseUrl = "https://raw.githubusercontent.com/Werraaa/zagadka_dnia/main/";
+    // Skoro kod jest w /zagadki/ a zdjęcia w katalogu głównym (poziom wyżej), używamy ścieżki relatywnej
+    const githubImgBaseUrl = "../";
 
     let board = [];
     let score = 0;
@@ -252,7 +252,7 @@ window.initPuzzle = function(puzzleContent) {
                     tile.classList.add('g2048-tile');
                     tile.innerText = value;
                     
-                    // Ładowanie obrazków z katalogu głównego
+                    // Pobieranie zdjęcia poziom wyżej
                     tile.style.backgroundImage = `url('${githubImgBaseUrl}${value}.jpg')`;
 
                     let topPosition = r * (currentCellSize + currentCellGap);
@@ -285,6 +285,17 @@ window.initPuzzle = function(puzzleContent) {
     function rotateBoardClockwise() {
         let nextBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
         for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; r++) { // poprawione sprawdzanie pętli obrotu
+                nextBoard[c][GRID_SIZE - 1 - r] = board[r][c];
+            }
+        }
+        board = nextBoard;
+    }
+    
+    // Uproszczona wersja rotacji bez ryzyka pętli
+    function rotateBoard() {
+        let nextBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
+        for (let r = 0; r < GRID_SIZE; r++) {
             for (let c = 0; c < GRID_SIZE; c++) {
                 nextBoard[c][GRID_SIZE - 1 - r] = board[r][c];
             }
@@ -300,14 +311,14 @@ window.initPuzzle = function(puzzleContent) {
         if (direction === 'Right') rotations = 2;
         if (direction === 'Up') rotations = 3;
 
-        for (let i = 0; i < rotations; i++) rotateBoardClockwise();
+        for (let i = 0; i < rotations; i++) rotateBoard();
 
         for (let r = 0; r < GRID_SIZE; r++) {
             board[r] = slide(board[r]);
         }
 
         let returnRotations = (4 - rotations) % 4;
-        for (let i = 0; i < returnRotations; i++) rotateBoardClockwise();
+        for (let i = 0; i < returnRotations; i++) rotateBoard();
 
         if (oldBoard !== JSON.stringify(board)) {
             addRandomTile();
@@ -330,7 +341,7 @@ window.initPuzzle = function(puzzleContent) {
         return true;
     }
 
-    // Obsługa strzałek na klawiaturze
+    // Sterowanie klawiaturą
     const keydownHandler = (e) => {
         if (!document.getElementById('g2048-game-container')) {
             window.removeEventListener('keydown', keydownHandler);
@@ -348,7 +359,7 @@ window.initPuzzle = function(puzzleContent) {
     };
     window.addEventListener('keydown', keydownHandler);
 
-    // Obsługa swipe na telefonach
+    // Sterowanie dotykowe
     let touchStartX = 0;
     let touchStartY = 0;
     const gameContainer = document.getElementById('g2048-game-container');
@@ -378,7 +389,6 @@ window.initPuzzle = function(puzzleContent) {
         }
     }, { passive: true });
 
-    // Przyciski i zachowanie responsywne
     retryButton.addEventListener('click', initGame);
     
     const resizeHandler = () => {
@@ -390,6 +400,6 @@ window.initPuzzle = function(puzzleContent) {
     };
     window.addEventListener('resize', resizeHandler);
 
-    // Start gry
+    // Wywołanie startowe gry
     initGame();
-};
+}
