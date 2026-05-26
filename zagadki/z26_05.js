@@ -1,8 +1,9 @@
-function initPuzzle(puzzleContent) {
-    // Czyszczenie domyślnego tekstu w kontenerze strony głównej
+// Główna funkcja, której szuka i którą uruchamia Twój index.html
+window.initPuzzle = function(puzzleContent) {
+    // Czyszczenie ekranu z domyślnego tekstu ładowania
     puzzleContent.innerHTML = "";
 
-    // --- 1. STYLE CSS (Wstrzykiwane dynamicznie do head strony) ---
+    // --- 1. DYNAMICZNE STYLOWANIE (CSS) ---
     const styles = `
         :root {
             --g2048-grid-size: 4;
@@ -152,7 +153,7 @@ function initPuzzle(puzzleContent) {
         }
     `;
 
-    // Zapobieganie dublowaniu się styli przy wielokrotnym włączaniu gry
+    // Usuwamy stare style, jeśli istniały
     const oldStyle = document.getElementById("g2048-styles");
     if (oldStyle) oldStyle.remove();
 
@@ -161,7 +162,7 @@ function initPuzzle(puzzleContent) {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // --- 2. STRUKTURA HTML (Budowana wewnątrz przekazanego puzzleContent) ---
+    // --- 2. BUDOWANIE STRUKTURY HTML ---
     const gameWrapper = document.createElement("div");
     gameWrapper.classList.add("game-2048-wrapper");
 
@@ -184,7 +185,7 @@ function initPuzzle(puzzleContent) {
     `;
     puzzleContent.appendChild(gameWrapper);
 
-    // --- 3. LOGIKA GRY ---
+    // --- 3. LOGIKA SILNIKA 2048 ---
     const GRID_SIZE = 4;
     const gridContainer = document.getElementById('g2048-grid-container');
     const tileContainer = document.getElementById('g2048-tile-container');
@@ -192,7 +193,8 @@ function initPuzzle(puzzleContent) {
     const gameMessage = document.getElementById('g2048-message');
     const retryButton = document.getElementById('g2048-retry');
 
-    // Sztywny, pełny URL do głównego katalogu Twojego repozytorium na GitHubie (poziom wyżej niż "zagadki")
+    // Zdjęcia są w tym samym repozytorium co index.html (folder wyżej niż /zagadki/)
+    // Używamy pełnej ścieżki raw z GitHub, dzięki czemu działa niezależnie od hostingu
     const githubImgBaseUrl = "https://raw.githubusercontent.com/Werraaa/zagadka_dnia/main/";
 
     let board = [];
@@ -250,7 +252,7 @@ function initPuzzle(puzzleContent) {
                     tile.classList.add('g2048-tile');
                     tile.innerText = value;
                     
-                    // Ładowanie obrazka bezpośrednio z serwera GitHub
+                    // Ładowanie obrazków z katalogu głównego
                     tile.style.backgroundImage = `url('${githubImgBaseUrl}${value}.jpg')`;
 
                     let topPosition = r * (currentCellSize + currentCellGap);
@@ -328,9 +330,8 @@ function initPuzzle(puzzleContent) {
         return true;
     }
 
-    // Obsługa sterowania klawiaturą
+    // Obsługa strzałek na klawiaturze
     const keydownHandler = (e) => {
-        // Jeśli gra została usunięta z dokumentu (np. użytkownik zmienił dzień w kalendarzu), czyścimy event
         if (!document.getElementById('g2048-game-container')) {
             window.removeEventListener('keydown', keydownHandler);
             return;
@@ -347,7 +348,7 @@ function initPuzzle(puzzleContent) {
     };
     window.addEventListener('keydown', keydownHandler);
 
-    // Sterowanie dotykowe (Swipy na telefonach)
+    // Obsługa swipe na telefonach
     let touchStartX = 0;
     let touchStartY = 0;
     const gameContainer = document.getElementById('g2048-game-container');
@@ -360,7 +361,6 @@ function initPuzzle(puzzleContent) {
     gameContainer.addEventListener('touchend', (e) => {
         let touchEndX = e.changedTouches[0].screenX;
         let touchEndY = e.changedTouches[0].screenY;
-        
         let diffX = touchEndX - touchStartX;
         let diffY = touchEndY - touchStartY;
         const threshold = 30; 
@@ -378,7 +378,7 @@ function initPuzzle(puzzleContent) {
         }
     }, { passive: true });
 
-    // Obsługa przycisku restartu i zmian wielkości okna
+    // Przyciski i zachowanie responsywne
     retryButton.addEventListener('click', initGame);
     
     const resizeHandler = () => {
@@ -390,9 +390,6 @@ function initPuzzle(puzzleContent) {
     };
     window.addEventListener('resize', resizeHandler);
 
-    // Pierwsze uruchomienie gry
+    // Start gry
     initGame();
-}
-
-// Umożliwia stronie głównej odnalezienie i odpalenie funkcji po załadowaniu skryptu przez tag <script>
-window.initPuzzle = initPuzzle;
+};
