@@ -272,7 +272,7 @@
                 // Tworzymy element script, aby "odpalić" plik JS
                 const script = document.createElement('script');
                 script.id = 'puzzle-script';
-                script.src = url;
+                script.src = url + '?v=' + Date.now();
                 
                 // Zakładamy, że plik JS wywoła jakąś funkcję globalną, np. initPuzzle()
                 // Albo po prostu po załadowaniu skryptu wywołujemy akcję
