@@ -252,43 +252,35 @@
             return `z${day}_${month}.js`;
         }
 
-        // 2. Funkcja loadPuzzle teraz dynamicznie importuje plik JS
-        async function loadPuzzle(date) {
-            const fileName = getFileNameForDate(date);
-            const statusLabel = document.getElementById('status-label');
-            const puzzleContent = document.getElementById('puzzle-content');
-            
-            statusLabel.innerText = "Aktywne wyzwanie: " + fileName;
-            puzzleContent.innerHTML = `<h3>Wczytywanie kodu...</h3>`;
+       async function loadPuzzle(date) {
+    const fileName = getFileNameForDate(date);
+    const statusLabel = document.getElementById('status-label');
+    const puzzleContent = document.getElementById('puzzle-content');
+    
+    statusLabel.innerText = "Aktywne wyzwanie: " + fileName;
+    puzzleContent.innerHTML = `<h3>Wczytywanie kodu...</h3>`;
 
-            // Ścieżka do surowego pliku na GitHub
-            const url = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${repoConfig.path}/${fileName}`;
+    const url = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${repoConfig.path}/${fileName}?v=${Date.now()}`;
 
-            try {
-                // Czyścimy poprzednie skrypty o tej samej nazwie, jeśli istnieją
-                const oldScript = document.getElementById('puzzle-script');
-                if (oldScript) oldScript.remove();
-
-                // Tworzymy element script, aby "odpalić" plik JS
-                const script = document.createElement('script');
-                script.id = 'puzzle-script';
-                script.src = url + '?v=' + Date.now();
-                
-                // Zakładamy, że plik JS wywoła jakąś funkcję globalną, np. initPuzzle()
-                // Albo po prostu po załadowaniu skryptu wywołujemy akcję
-                script.onload = () => {
-                    console.log(`${fileName} załadowany pomyślnie.`);
-                    // Jeśli w Twoim pliku z14_05.js jest np. funkcja start()
-                    if (typeof initPuzzle === "function") {
-                        initPuzzle(puzzleContent);
-                    }
-                };
-
-                document.body.appendChild(script);
-
-            } catch (err) {
-                puzzleContent.innerHTML = `<p style="color:red;">Nie udało się odnaleźć lub uruchomić pliku ${fileName}</p>`;
-            }
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const code = await response.text();
+        
+        // Wykonaj kod JS pobrany jako tekst
+        const fn = new Function(code);
+        fn();
+        
+        // Wywołaj initPuzzle jeśli jest dostępne
+        if (typeof initPuzzle === "function") {
+            initPuzzle(puzzleContent);
+        }
+        
+    } catch (err) {
+        puzzleContent.innerHTML = `<p style="color:red;">Nie udało się załadować: ${fileName}<br><small>${err.message}</small></p>`;
+    }
+}
         }
 
         function toggleArchive() {
