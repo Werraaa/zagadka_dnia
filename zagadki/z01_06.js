@@ -1,4 +1,4 @@
-// z01_06.js — Zagadka Dnia: 2048 (z obrazkami)
+// z01_06.js — Zagadka Dnia: 2048 (z obrazkami) 
 // Wywoływana przez stronę główną jako: initPuzzle(containerElement)
 
 function initPuzzle(container) {
